@@ -1,0 +1,154 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Orbit Forge: Rocket Design &amp; Launch Simulator</title>
+  <meta name="description" content="Design a rocket from different nose cones, bodies, fins and engines, then launch it in 3D. Good designs reach orbit, bad ones crash.">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🚀</text></svg>">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/academy.css">
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+      "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/",
+      "cannon-es": "https://cdn.jsdelivr.net/npm/cannon-es@0.20.0/dist/cannon-es.js"
+    }
+  }
+  </script>
+</head>
+<body class="mode-build">
+  <canvas id="scene"></canvas>
+
+  <div id="loading">
+    <div class="loading-inner">
+      <div class="loading-rocket">🚀</div>
+      <div id="loading-text">Fueling up…</div>
+    </div>
+  </div>
+
+  <header class="topbar">
+    <div class="brand"><span class="brand-mark">◢</span> ORBIT<b>FORGE</b></div>
+    <div class="topbar-mid" id="mode-label">Hangar: design your rocket</div>
+    <div class="topbar-actions">
+      <button class="ghost" id="btn-learn" title="Animated lessons on the science of rockets">🎓 <span class="lbl">Learn</span></button>
+      <button class="ghost build-only" id="btn-guide" title="Step-by-step guide to your first launch">🧭 <span class="lbl">Guide me</span></button>
+      <button class="ghost flight-only" id="btn-tips" title="Science tips during the flight">🔬 <span class="lbl">Tips on</span></button>
+      <button class="ghost" id="btn-help" title="Controls and how to play">? <span class="lbl">Help</span></button>
+    </div>
+  </header>
+
+  <!-- Builder -->
+  <aside id="hangar" class="panel panel-left build-only" aria-label="Rocket builder"></aside>
+  <aside id="design-stats" class="panel panel-right build-only" aria-label="Design analysis"></aside>
+
+  <!-- Flight HUD -->
+  <div id="hud" class="flight-only">
+    <div class="hud-top">
+      <div class="clock" id="hud-clock">T+ 00:00</div>
+      <div class="phase" id="hud-phase">Ignition</div>
+    </div>
+
+    <div class="hud-card hud-left">
+      <div class="big-readout">
+        <span class="label">Altitude</span>
+        <span class="value" id="hud-alt">0</span>
+      </div>
+      <div class="readouts">
+        <div><span class="label">Speed</span><span id="hud-speed">0</span></div>
+        <div><span class="label">Vertical</span><span id="hud-vr">0</span></div>
+        <div><span class="label">Horizontal</span><span id="hud-vh">0</span></div>
+        <div><span class="label">Mach</span><span id="hud-mach">0</span></div>
+        <div><span class="label">G-force</span><span id="hud-g">0</span></div>
+        <div><span class="label">Angle of attack</span><span id="hud-aoa">0</span></div>
+      </div>
+      <div class="meter">
+        <div class="meter-head"><span class="label">Dynamic pressure</span><span id="hud-q">0 kPa</span></div>
+        <div class="bar"><div class="fill q" id="hud-q-bar"></div><div class="limit" id="hud-q-limit"></div></div>
+      </div>
+      <div class="meter">
+        <div class="meter-head"><span class="label">Orbital speed</span><span id="hud-orbv">0%</span></div>
+        <div class="bar"><div class="fill orb" id="hud-orbv-bar"></div></div>
+      </div>
+    </div>
+
+    <div class="hud-card hud-right">
+      <div class="readouts two">
+        <div><span class="label">Apoapsis</span><span id="hud-apo">–</span></div>
+        <div><span class="label">Periapsis</span><span id="hud-peri">–</span></div>
+        <div><span class="label">Time to Ap</span><span id="hud-tapo">–</span></div>
+        <div><span class="label">Stability</span><span id="hud-margin">–</span></div>
+      </div>
+      <div class="meter">
+        <div class="meter-head"><span class="label">Throttle</span><span id="hud-throttle">100%</span></div>
+        <div class="bar"><div class="fill thr" id="hud-throttle-bar"></div></div>
+      </div>
+      <div id="hud-stages"></div>
+    </div>
+
+    <div class="hud-log" id="hud-log"></div>
+
+    <div class="hud-bottom">
+      <div class="seg" id="warp-buttons" title="Time warp (, and . keys)"></div>
+      <div class="seg">
+        <button id="btn-view-chase" class="active" title="Chase camera (C)">Chase</button>
+        <button id="btn-view-map" title="Orbit map (M)">Map</button>
+      </div>
+      <button id="btn-stage" class="ghost" title="Stage now (Space)">Stage</button>
+      <button id="btn-abort" class="ghost danger" title="Back to hangar (Esc)">Hangar</button>
+    </div>
+
+    <div class="manual-hint" id="manual-hint" hidden>
+      <b>Manual control</b> · A/D pitch · W/S throttle · Z full · X cut · Space stage
+    </div>
+  </div>
+
+  <div id="map-labels"></div>
+
+  <div id="result" class="modal" hidden>
+    <div class="modal-card result-card">
+      <div class="result-badge" id="result-badge"></div>
+      <h2 id="result-title"></h2>
+      <p class="result-detail" id="result-detail"></p>
+      <div class="result-grid" id="result-grid"></div>
+      <h3>Flight debrief</h3>
+      <ul class="result-tips" id="result-tips"></ul>
+      <div class="modal-actions">
+        <button id="btn-result-watch" class="ghost">Keep watching</button>
+        <button id="btn-result-retry" class="ghost">Relaunch</button>
+        <button id="btn-result-hangar" class="primary">Back to hangar</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="help" class="modal" hidden>
+    <div class="modal-card">
+      <h2>How to fly</h2>
+      <p class="kbd-row">New to rockets? Open <b>🎓 Learn</b> for animated lessons, or <b>🧭 Guide me</b> for a step-by-step first launch.</p>
+      <ol class="help-list">
+        <li><b>Design.</b> Pick a nose cone, body shape, fins, engines and tank sizes for up to three stages. The analysis panel shows mass, thrust-to-weight, Δv and stability.</li>
+        <li><b>Launch.</b> The flight computer follows the flight plan you chose. Spent stages drop off automatically.</li>
+        <li><b>Reach orbit.</b> You need roughly <b>3,400 m/s</b> of Δv and a periapsis above the <b>70 km</b> atmosphere.</li>
+      </ol>
+      <h3>What makes a rocket fail</h3>
+      <ul class="help-list">
+        <li><b>Thrust-to-weight below 1</b>: it never leaves the pad.</li>
+        <li><b>Unstable aerodynamics</b> (centre of pressure ahead of centre of mass) with weak steering: it tumbles and snaps.</li>
+        <li><b>Too much drag or too little Δv</b>: it runs out of fuel and falls back.</li>
+        <li><b>Too much thrust low down</b>, or a weak body: dynamic pressure tears it apart.</li>
+      </ul>
+      <h3>Controls</h3>
+      <p class="kbd-row"><kbd>Drag</kbd> orbit camera · <kbd>Scroll</kbd> zoom · <kbd>M</kbd> map · <kbd>,</kbd> <kbd>.</kbd> time warp · <kbd>Space</kbd> stage · <kbd>Esc</kbd> hangar</p>
+      <p class="kbd-row">Manual flight: <kbd>A</kbd>/<kbd>D</kbd> pitch · <kbd>W</kbd>/<kbd>S</kbd> throttle · <kbd>Z</kbd> full · <kbd>X</kbd> cut</p>
+      <div class="modal-actions"><button class="primary" id="btn-help-close">Got it</button></div>
+    </div>
+  </div>
+
+  <noscript><div class="noscript">Orbit Forge needs JavaScript and WebGL.</div></noscript>
+  <script type="module" src="js/main.js"></script>
+</body>
+</html>
