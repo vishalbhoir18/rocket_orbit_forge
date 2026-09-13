@@ -105,7 +105,7 @@
 
 /* ---------- in-flight science tips ---------- */
 .fact-pop {
-  position: fixed; right: 16px; bottom: 76px; z-index: 12; width: 340px;
+  position: fixed; right: 16px; bottom: 90px; z-index: 12; width: 340px;
   padding: 12px 14px;
   background: rgba(10, 14, 23, .94); border: 1px solid rgba(255, 197, 61, .35); border-radius: 14px;
   box-shadow: 0 16px 40px rgba(0, 0, 0, .5);
@@ -128,7 +128,7 @@
   .ac-brand { margin-right: auto; }
   .ac-simple { font-size: 16px; }
   .guide-card { left: 8px !important; right: 8px; top: 60px !important; width: auto; }
-  .fact-pop { left: 8px; right: 8px; width: auto; bottom: 120px; }
+  .fact-pop { left: 8px; right: 8px; width: auto; bottom: 140px; }
 }
 @media (max-width: 600px) {
   .topbar-actions .lbl { display: none; }

@@ -97,3 +97,7 @@ js/effects.js     exhaust, explosions, cannon-es debris
 js/ui.js          hangar, analysis panel, HUD, results
 js/icons.js       SVG part icons
 ```
+
+## License
+
+Rocket Orbit Forge App © 2026 by [Vishal Bhoir](https://linktr.ee/thebioway) is licensed under [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/).
